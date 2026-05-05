@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pesanan Makanan Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; }
+        .menu-card:hover { transform: translateY(-5px); transition: all 0.3s ease; }
+        .modal { transition: opacity 0.25s ease; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-orange-600">RestoLezat</h1>
+                <p class="text-xs text-gray-500">Nikmati hidangan terbaik kami</p>
+            </div>
+            <div class="relative cursor-pointer" onclick="toggleCart()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-5 w-5 flex items-center justify-center">0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <!-- Info Pelanggan -->
+        <section class="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-100">
+            <h2 class="text-lg font-semibold mb-4 flex items-center">
+                <span class="mr-2">📋</span> Informasi Pelanggan
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Meja</label>
+                    <select id="table-number" class="w-full border-gray-300 rounded-lg p-2.5 bg-gray-50 border focus:ring-orange-500 focus:border-orange-500">
+                        <option value="">Pilih Nomor Meja</option>
+                        <option value="1">Meja 01</option>
+                        <option value="2">Meja 02</option>
+                        <option value="3">Meja 03</option>
+                        <option value="4">Meja 04</option>
+                        <option value="5">Meja 05</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nomor WhatsApp / Telepon</label>
+                    <input type="tel" id="phone-number" placeholder="Contoh: 08123456789" class="w-full border-gray-300 rounded-lg p-2.5 bg-gray-50 border focus:ring-orange-500 focus:border-orange-500">
+                </div>
+            </div>
+        </section>
+
+        <!-- Menu List -->
+        <h2 class="text-2xl font-bold mb-6">Menu Spesial</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="menu-container">
+            <!-- Menu items will be injected here -->
+        </div>
+    </main>
+
+    <!-- Cart Sidebar/Modal -->
+    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex justify-end">
+        <div class="bg-white w-full max-w-md h-full shadow-xl flex flex-col p-6 overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Keranjang Belanja</h2>
+                <button onclick="toggleCart()" class="text-gray-500 hover:text-black text-2xl">&times;</button>
+            </div>
+            
+            <div id="cart-items" class="flex-grow space-y-4">
+                <!-- Cart items will be injected here -->
+            </div>
+
+            <div class="border-t pt-6 mt-6">
+                <div class="flex justify-between text-lg font-bold mb-6">
+                    <span>Total Harga</span>
+                    <span id="total-price">Rp 0</span>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Metode Pembayaran</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="border p-3 rounded-xl cursor-pointer hover:bg-orange-50 flex items-center justify-center transition-colors border-orange-500 bg-orange-50" id="label-qris">
+                            <input type="radio" name="payment" value="qris" checked class="hidden" onclick="updatePaymentUI('qris')">
+                            <span class="text-sm font-semibold text-orange-700">QRIS</span>
+                        </label>
+                        <label class="border p-3 rounded-xl cursor-pointer hover:bg-orange-50 flex items-center justify-center transition-colors" id="label-cashier">
+                            <input type="radio" name="payment" value="kasir" class="hidden" onclick="updatePaymentUI('kasir')">
+                            <span class="text-sm font-semibold text-gray-700">Bayar di Kasir</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- QRIS Visual Area -->
+                <div id="qris-area" class="mb-6 bg-gray-100 p-4 rounded-xl text-center">
+                    <p class="text-xs font-bold text-gray-600 mb-2">SCAN UNTUK MEMBAYAR</p>
+                    <div class="bg-white p-2 inline-block rounded-lg shadow-sm">
+                        <svg viewBox="0 0 100 100" class="w-32 h-32 mx-auto">
+                            <rect width="100" height="100" fill="white"/>
+                            <path d="M10,10 h30 v30 h-30 z M15,15 v20 h20 v-20 z" fill="black"/>
+                            <path d="M60,10 h30 v30 h-30 z M65,15 v20 h20 v-20 z" fill="black"/>
+                            <path d="M10,60 h30 v30 h-30 z M15,65 v20 h20 v-20 z" fill="black"/>
+                            <rect x="20" y="20" width="10" height="10" fill="black"/>
+                            <rect x="70" y="20" width="10" height="10" fill="black"/>
+                            <rect x="20" y="70" width="10" height="10" fill="black"/>
+                            <rect x="45" y="45" width="10" height="10" fill="black"/>
+                            <rect x="60" y="60" width="5" height="5" fill="black"/>
+                            <rect x="75" y="75" width="15" height="15" fill="black"/>
+                            <rect x="50" y="10" width="5" height="20" fill="black"/>
+                            <rect x="10" y="50" width="20" height="5" fill="black"/>
+                        </svg>
+                    </div>
+                    <p class="text-[10px] mt-2 text-gray-500 uppercase tracking-widest font-bold">QRIS GPN</p>
+                </div>
+
+                <button onclick="checkout()" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl hover:bg-orange-700 shadow-lg shadow-orange-200 transition-all">
+                    Konfirmasi Pesanan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message Custom Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center">
+            <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <h3 class="text-2xl font-bold mb-2">Pesanan Diterima!</h3>
+            <p id="success-msg" class="text-gray-600 mb-6">Pesanan Anda sedang diproses oleh dapur kami.</p>
+            <button onclick="closeSuccess()" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl">Tutup</button>
+        </div>
+    </div>
+
+    <script>
+        const menuItems = [
+            { id: 1, name: "Spaghetti Carbonara", price: 45000, img: "🍝", desc: "Saus krim kental dengan smoked beef dan keju parmesan asli." },
+            { id: 2, name: "Pizza Mozzarella", price: 65000, img: "🍕", desc: "Dough tipis krispi dengan topping keju mozzarella melimpah." },
+            { id: 3, name: "Cheese Burger", price: 38000, img: "🍔", desc: "Daging sapi pilihan dengan lapisan keju cheddar leleh." }
+        ];
+
+        let cart = [];
+
+        function initApp() {
+            const container = document.getElementById('menu-container');
+            menuItems.forEach(item => {
+                container.innerHTML += `
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden menu-card">
+                        <div class="h-40 bg-orange-50 flex items-center justify-center text-6xl">
+                            ${item.img}
+                        </div>
+                        <div class="p-5">
+                            <h3 class="font-bold text-lg mb-1">${item.name}</h3>
+                            <p class="text-gray-500 text-xs mb-4">${item.desc}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-orange-600">Rp ${item.price.toLocaleString('id-ID')}</span>
+                                <button onclick="addToCart(${item.id})" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-black transition-colors">
+                                    Tambah
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addToCart(id) {
+            const item = menuItems.find(m => m.id === id);
+            const existing = cart.find(c => c.id === id);
+            
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({...item, quantity: 1});
+            }
+            renderCart();
+            // Memberikan feedback visual sedikit
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "✓ OK";
+            setTimeout(() => btn.innerText = originalText, 1000);
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(item => item.id !== id);
+            renderCart();
+        }
+
+        function updateQty(id, delta) {
+            const item = cart.find(c => c.id === id);
+            if (item) {
+                item.quantity += delta;
+                if (item.quantity <= 0) {
+                    removeFromCart(id);
+                } else {
+                    renderCart();
+                }
+            }
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            const countEl = document.getElementById('cart-count');
+            const totalEl = document.getElementById('total-price');
+            
+            container.innerHTML = '';
+            let total = 0;
+            let count = 0;
+
+            if (cart.length === 0) {
+                container.innerHTML = '<div class="text-center py-20 text-gray-400">Keranjang masih kosong</div>';
+            }
+
+            cart.forEach(item => {
+                total += item.price * item.quantity;
+                count += item.quantity;
+                container.innerHTML += `
+                    <div class="flex items-center justify-between border-b pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">${item.img}</div>
+                            <div>
+                                <h4 class="font-semibold text-sm">${item.name}</h4>
+                                <p class="text-xs text-gray-500">Rp ${item.price.toLocaleString('id-ID')}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center border rounded-lg overflow-hidden">
+                                <button onclick="updateQty(${item.id}, -1)" class="px-2 py-1 bg-gray-50 hover:bg-gray-100">-</button>
+                                <span class="px-3 text-sm font-medium">${item.quantity}</span>
+                                <button onclick="updateQty(${item.id}, 1)" class="px-2 py-1 bg-gray-50 hover:bg-gray-100">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            countEl.innerText = count;
+            totalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+        }
+
+        function toggleCart() {
+            const modal = document.getElementById('cart-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function updatePaymentUI(method) {
+            const qrisArea = document.getElementById('qris-area');
+            const labelQris = document.getElementById('label-qris');
+            const labelCashier = document.getElementById('label-cashier');
+
+            if (method === 'qris') {
+                qrisArea.classList.remove('hidden');
+                labelQris.classList.add('border-orange-500', 'bg-orange-50');
+                labelQris.querySelector('span').classList.replace('text-gray-700', 'text-orange-700');
+                labelCashier.classList.remove('border-orange-500', 'bg-orange-50');
+                labelCashier.querySelector('span').classList.replace('text-orange-700', 'text-gray-700');
+            } else {
+                qrisArea.classList.add('hidden');
+                labelCashier.classList.add('border-orange-500', 'bg-orange-50');
+                labelCashier.querySelector('span').classList.replace('text-gray-700', 'text-orange-700');
+                labelQris.classList.remove('border-orange-500', 'bg-orange-50');
+                labelQris.querySelector('span').classList.replace('text-orange-700', 'text-gray-700');
+            }
+        }
+
+        function checkout() {
+            const table = document.getElementById('table-number').value;
+            const phone = document.getElementById('phone-number').value;
+            const payment = document.querySelector('input[name="payment"]:checked').value;
+
+            if (cart.length === 0) {
+                alert("Keranjang Anda kosong!");
+                return;
+            }
+            if (!table) {
+                alert("Mohon pilih nomor meja Anda!");
+                return;
+            }
+            if (!phone) {
+                alert("Mohon masukkan nomor telepon Anda!");
+                return;
+            }
+
+            const successModal = document.getElementById('success-modal');
+            const successMsg = document.getElementById('success-msg');
+            
+            const methodText = payment === 'qris' ? 'via QRIS' : 'di Kasir';
+            successMsg.innerText = `Pesanan untuk Meja ${table} telah kami terima. Pembayaran ${methodText} sedang diproses. Konfirmasi akan dikirim ke ${phone}.`;
+            
+            successModal.classList.remove('hidden');
+            cart = [];
+            renderCart();
+            toggleCart();
+        }
+
+        function closeSuccess() {
+            document.getElementById('success-modal').classList.add('hidden');
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
